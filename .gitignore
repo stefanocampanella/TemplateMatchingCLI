@@ -1,0 +1,10 @@
+*.jl.*.cov
+*.jl.cov
+*.jl.mem
+**/Manifest.toml
+scratch
+data
+.vscode
+**/*.code-workspace
+**/.DS_Store
+**/*.log
