@@ -207,7 +207,13 @@ end
 csv_columns = [:year, :month, :day, :hour, :minute, :second, :microsecond, :template, :north, :east, :up, :magnitude_mean, :magnitude_std, :correlation_mean, :correlation_std, :residual]
 
 # ╔═╡ b18c25c7-0dd3-4274-9ecb-77e52e936432
-CSV.write("catalogue.csv", detections[!, csv_columns])
+let df = copy(detections), cols = copy(csv_columns)
+	for n = 1:16
+		push!(cols, Symbol("cc$n"))
+		df[!, "cc$n"] = map(xs -> xs[n], df.correlations)
+	end
+	CSV.write("catalogue.csv", df[!, cols])
+end
 
 # ╔═╡ Cell order:
 # ╠═f00d14ea-b8db-4bf2-bfdf-90a4a3cb3ccf
