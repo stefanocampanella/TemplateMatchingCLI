@@ -91,6 +91,9 @@ template_counts = combine(groupby(candidates, :template), nrow => :count)
 # ╔═╡ 20ac88b1-5a8a-4919-b6cd-8b4a7d829349
 bar(template_counts.template, template_counts.count, label=nothing)
 
+# ╔═╡ d4b0ffe4-92f8-4a25-a259-aa9175f39933
+bad_templates = filter(:count => >(100), template_counts)
+
 # ╔═╡ 12950cbd-cfe8-4a53-a93c-7da9aec408bc
 let
 	N = nrow(templates)
@@ -103,23 +106,17 @@ let
 			amps_squared = maximum.(map(series -> series .^ 2, template.data))
 			x0 = [template.north, template.east, template.up]
 			dists_squared = map(xs -> dot(xs - x0, xs - x0), sensors)
-			mag = 0.5log10(mean(amps_squared .* dists_squared, ws)) - 2
+			mag = 0.5log10(mean(amps_squared .* dists_squared)) - log10(50.199)
 			magnitudes[n] = mag
 		end
 	end
 	templates.magnitude_recomputed = magnitudes
-end
 
-# ╔═╡ 81154535-0576-4a69-b906-dabc3d7c8f9d
-let
 	plt = plot()
 	histogram!(plt, templates.magnitude_recomputed, label="recomputed magnitudes", fillalpha=0.5)
 	histogram!(plt, templates.magnitude, label="catalogue magnitudes", fillalpha=0.5)
 	plt
 end
-
-# ╔═╡ d4b0ffe4-92f8-4a25-a259-aa9175f39933
-bad_templates = filter(:count => >(100), template_counts)
 
 # ╔═╡ 9a1c9fe2-8f1d-4f2a-b0b4-ef1bf91affdc
 empty_templates = filter(:magnitude_recomputed => <=(0.), templates)
@@ -212,7 +209,7 @@ let
 		amps_squared = maximum.(map(series -> series.^2, detection.data))
 		x0 = [detection.north, detection.east, detection.up]
 		dists_squared = map(xs -> dot(xs - x0, xs - x0), sensors)
-		mag = 0.5log10(mean(amps_squared .* dists_squared, ws)) - 2
+		mag = 0.5log10(mean(amps_squared .* dists_squared)) - log10(50.199)
 		correlation_mean[n] = cc_mean
 		correlation_std[n] = cc_std
 		magnitudes[n] = mag
@@ -296,10 +293,10 @@ CSV.write("good_templates.csv", good_templates[!, [:index, :magnitude, :magnitud
 # ╠═3ec5251a-2e3e-4344-bb1f-fcd79daf9714
 # ╠═79f1487a-0dc8-483b-a100-ecd176b7dd92
 # ╟─57b35604-727b-4eac-bcbd-ea302e4c79a2
-# ╠═2fc4fdfe-81b2-45f1-9ed4-b8ad5bb86ee3
+# ╟─2fc4fdfe-81b2-45f1-9ed4-b8ad5bb86ee3
 # ╠═43f3ae0e-9eb0-47d1-b750-b04355f12082
 # ╟─7987b27b-c7ae-4f97-93ee-b83971ec0248
-# ╠═6d399562-aed4-42a6-b4ee-f1b6cb2c9a4e
+# ╟─6d399562-aed4-42a6-b4ee-f1b6cb2c9a4e
 # ╠═fea071ff-179b-46b0-8bff-953712eb8fd8
 # ╠═fd864a98-14ee-4bdd-9a8d-52e80ee4f5a1
 # ╟─6ea0c487-57e6-4ade-bd45-15226df212ec
@@ -307,9 +304,8 @@ CSV.write("good_templates.csv", good_templates[!, [:index, :magnitude, :magnitud
 # ╟─102e4534-6be4-4436-be36-69726a393253
 # ╠═035a667d-e948-4dbe-8ae0-bcfd571a2da9
 # ╠═20ac88b1-5a8a-4919-b6cd-8b4a7d829349
-# ╠═12950cbd-cfe8-4a53-a93c-7da9aec408bc
-# ╠═81154535-0576-4a69-b906-dabc3d7c8f9d
 # ╠═d4b0ffe4-92f8-4a25-a259-aa9175f39933
+# ╠═12950cbd-cfe8-4a53-a93c-7da9aec408bc
 # ╠═9a1c9fe2-8f1d-4f2a-b0b4-ef1bf91affdc
 # ╠═aed075ff-6ca6-4dd6-bb64-ab75177f654e
 # ╠═fe822a34-bdc7-486f-a225-2ed2c15a8371
