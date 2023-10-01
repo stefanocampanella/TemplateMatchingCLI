@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.22
+# v0.19.29
 
 using Markdown
 using InteractiveUtils
@@ -32,9 +32,6 @@ using JLD2
 # ╔═╡ 76e2e659-c708-4a08-8263-def6c3dfa930
 using Dates
 
-# ╔═╡ 533d8e9e-40ff-4740-bbd9-8199cf0bcef6
-using TemplateMatchingCLI
-
 # ╔═╡ a7c96f5f-db00-48ac-8945-c268200fd868
 using Optim
 
@@ -52,6 +49,15 @@ using LinearAlgebra
 
 # ╔═╡ 79f1487a-0dc8-483b-a100-ecd176b7dd92
 using CSV
+
+# ╔═╡ be8f1c49-69b8-4634-a2a2-7fbaca5ad134
+using Statistics
+
+# ╔═╡ 533d8e9e-40ff-4740-bbd9-8199cf0bcef6
+# ╠═╡ disabled = true
+#=╠═╡
+using TemplateMatchingCLI
+  ╠═╡ =#
 
 # ╔═╡ 57b35604-727b-4eac-bcbd-ea302e4c79a2
 md"## Reading template matched catalogue"
@@ -193,6 +199,50 @@ end
 # ╔═╡ 31ee4bf4-e1bc-461f-b3e5-d2a688644bda
 histogram2d(detections.north, detections.east)
 
+# ╔═╡ 7d0d1145-2fef-4670-9fee-fc0f9f7a4939
+md"## Estimate re-localization error"
+
+# ╔═╡ f9399e46-7b49-46c3-9be7-1169714f2489
+function getrepeaters(threshold)
+	df = copy(detections)
+	df.correlation = mean.(df.correlations, weights.(templates[df.template, :weights]))
+	df.index = 1:nrow(df)
+	filter!(:correlation => >(threshold), df)
+	select!(df, [:index, :template, :correlation, :north, :east, :up])
+	for col in [:north, :east, :up]
+		df[!, col] -= templates[df[!, :template], col]
+	end
+	df.displacement = hypot.(df.north, df.east, df.up)
+	select!(df, [:index, :template, :correlation, :displacement])
+	filter(>(2) ∘ nrow, groupby(df, :template))
+end
+
+# ╔═╡ 79209399-eac3-4fbe-8dd2-c08a558b32da
+geterrs(t) = mean(combine(getrepeaters(t), :displacement => mean => :err)[!, :err])
+
+# ╔═╡ 0993f946-dca3-4722-958b-a2123b0a8bc8
+getnumrepeaters(t) = sum(nrow, getrepeaters(t))
+
+# ╔═╡ 250bb3cc-d282-4962-bb40-0dd075487d3a
+let start = 0.4, stop = 1.0, length = 128
+	thresholds = range(;start, stop, length)
+	errs = [geterrs(t) for t in thresholds]
+	plot(thresholds, errs, label=nothing, ylabel="error [cm]", xlabel="threshold")
+end
+
+# ╔═╡ 98807ae8-e77f-46bf-96ab-1ea33fe439e7
+let start = 0.4, stop = 1.0, length = 128
+	thresholds = range(;start, stop, length)
+	num = [getnumrepeaters(t) for t in thresholds]
+	plot(thresholds, num, label=nothing, ylabel="candidate repeaters", xlabel="threshold")
+end
+
+# ╔═╡ 0f77fcab-67c1-4d63-ac55-40edf25d5aa9
+repeaters = DataFrame(getrepeaters(1.0))
+
+# ╔═╡ 15eb64f3-6d95-4a2c-8290-26ed580ddb4b
+summarystats(repeaters.displacement)
+
 # ╔═╡ c1e952a4-83c4-4419-a0bc-bc579e643198
 md"## Compute magnitudes and cross correlations"
 
@@ -318,6 +368,15 @@ CSV.write("good_templates.csv", good_templates[!, [:index, :magnitude, :magnitud
 # ╠═3d6696cc-be33-4c5a-99f5-15fa1317a308
 # ╠═74e83a60-31a6-42ae-8367-c573c34483d5
 # ╠═31ee4bf4-e1bc-461f-b3e5-d2a688644bda
+# ╟─7d0d1145-2fef-4670-9fee-fc0f9f7a4939
+# ╠═be8f1c49-69b8-4634-a2a2-7fbaca5ad134
+# ╠═f9399e46-7b49-46c3-9be7-1169714f2489
+# ╠═79209399-eac3-4fbe-8dd2-c08a558b32da
+# ╠═0993f946-dca3-4722-958b-a2123b0a8bc8
+# ╠═250bb3cc-d282-4962-bb40-0dd075487d3a
+# ╠═98807ae8-e77f-46bf-96ab-1ea33fe439e7
+# ╠═0f77fcab-67c1-4d63-ac55-40edf25d5aa9
+# ╠═15eb64f3-6d95-4a2c-8290-26ed580ddb4b
 # ╟─c1e952a4-83c4-4419-a0bc-bc579e643198
 # ╠═57eb3a05-55ca-4ef7-a780-b62acc327db7
 # ╠═73942647-c38a-47ea-bdb1-3905ba3fc013
